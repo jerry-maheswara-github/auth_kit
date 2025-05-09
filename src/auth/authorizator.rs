@@ -19,6 +19,14 @@ impl Authorizator {
         permission: &str,
     ) -> Result<(), AuthError> {
         match self.strategy {
+            AuthStrategy::ABAC => {
+                let user = context.user.ok_or(AuthError::MissingUser)?;
+                let resource = context.resource.ok_or(AuthError::MissingResource)?;
+                authorize(user, service, permission, |u, _, _| {
+                    u.department == resource.department && u.clearance_level >= resource.required_level
+                })
+            }
+            
             AuthStrategy::RBAC => {
                 let user = context.user.ok_or(AuthError::MissingUser)?;
                 authorize(user, service, permission, |u, _, p| {
@@ -26,19 +34,11 @@ impl Authorizator {
                 })
             }
 
-            AuthStrategy::JWT => {
+            AuthStrategy::SBA => {
                 let claims = context.claims.ok_or(AuthError::MissingClaims)?;
                 authorize(claims, service, permission, |c, s, p| {
                     let scope = format!("{}:{}", s, p);
                     c.scopes.contains(&scope)
-                })
-            }
-
-            AuthStrategy::ABAC => {
-                let user = context.user.ok_or(AuthError::MissingUser)?;
-                let resource = context.resource.ok_or(AuthError::MissingResource)?;
-                authorize(user, service, permission, |u, _, _| {
-                    u.department == resource.department && u.clearance_level >= resource.required_level
                 })
             }
         }

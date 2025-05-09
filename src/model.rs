@@ -3,17 +3,17 @@ use serde::Deserialize;
 
 #[derive(Debug)]
 pub enum AuthStrategy {
-    RBAC,
-    JWT,
     ABAC,
+    RBAC,
+    SBA,
 }
 
 impl AuthStrategy {
     pub fn from_str(strategy: &str) -> Result<Self, &'static str> {
         match strategy.to_uppercase().as_str() {
-            "RBAC" => Ok(AuthStrategy::RBAC),
-            "JWT" => Ok(AuthStrategy::JWT),
             "ABAC" => Ok(AuthStrategy::ABAC),
+            "RBAC" => Ok(AuthStrategy::RBAC),
+            "SBA" => Ok(AuthStrategy::SBA),
             _ => Err("Invalid strategy"),
         }
     }

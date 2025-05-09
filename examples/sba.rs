@@ -14,13 +14,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         resource: None,
     };
 
-    let authorized = Authorizator::new("JWT");
+    let authorized = Authorizator::new("SBA");
     match authorized {
         Ok(mut auth) => {
             let result = auth.authorize_with_strategy(&context, "admin_service", "create");
             match result {
-                Ok(_) => println!("✅ Access granted via JWT."),
-                Err(e) => println!("❌ Access denied via JWT: {}", e),
+                Ok(_) => println!("✅ Access granted via SBA."),
+                Err(e) => println!("❌ Access denied via SBA: {}", e),
             }
         },
         Err(e) => {

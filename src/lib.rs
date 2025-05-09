@@ -1,90 +1,18 @@
 //! # AuthKit
 //!
 //! A flexible and extensible authentication and authorization library in Rust,
-//! supporting multiple strategies including **RBAC** (Role-Based Access Control),
-//! **JWT** (scope-based authorization), and **ABAC** (Attribute-Based Access Control).
+//! supporting multiple strategies including **ABAC** (Attribute-Based Access Control),
+//! **RBAC** (Role-Based Access Control), and **SBA** (Scope-Based Authorization)
 //!
 //! ## ✨ Features
 //!
 //! - Role and permission system based on the `Permission` enum.
 //! - Generic `authorize()` function with custom logic via closures.
-//! - Supports multiple access strategies: RBAC, JWT scopes, ABAC.
+//! - Supports multiple access strategies: ABAC, RBAC, SBA.
 //! - Generic subject support via the `Identifiable` trait.
 //!
 //! ## 🚀 Quick Start
 //!
-//! ### 🔐 RBAC (Role-Based Access Control)
-//!
-//! ```rust
-//! use auth_kit::auth::*;
-//! use bcrypt::{hash, DEFAULT_COST};
-//! use auth_kit::error::AuthError;
-//! use auth_kit::auth::authenticator::Authenticator;
-//! use auth_kit::auth::authorizator::Authorizator;
-//! use auth_kit::model::{AuthContext, AuthStrategy, Permission};
-//! 
-//! fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! 
-//!     let mut auth = Authenticator::new();
-//!
-//!     let password_hash = hash("secret123", DEFAULT_COST)
-//!         .map_err(|e| AuthError::PasswordHashingFailed(e.to_string()))?;
-//!
-//!     match auth.register("admin@example.com", &password_hash) {
-//!         Ok(()) => println!("User registered"),
-//!         Err(AuthError::EmailAlreadyRegistered) => println!("Email already in use"),
-//!         Err(e) => eprintln!("Registration failed: {:?}", e),
-//!     }
-//!
-//!     let mut user = auth.users.get("admin@example.com").cloned().expect("User must exist");
-//!     user.role.permissions.push(Permission::Create);
-//!
-//!     let context = AuthContext {
-//!         user: Some(&user),
-//!         claims: None,
-//!         resource: None,
-//!     };
-//!
-//!     let mut authorizator = Authorizator::new();
-//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::RBAC, "admin_service", "create");
-//!     match result {
-//!         Ok(_) => println!("✅ Access granted via RBAC."),
-//!         Err(e) => println!("❌  {}", e),
-//!     }
-//!     Ok(())
-//! }
-//! ```
-//!
-//! ### 🪪 JWT (Scope-Based Access Control)
-//!
-//! ```rust
-//! use auth_kit::auth::*;
-//!
-//! use auth_kit::auth::authorizator::Authorizator;
-//! use auth_kit::model::{AuthContext, AuthStrategy, Claims};
-//! 
-//! fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let claims = Claims {
-//!         email: "jwt@example.com".to_string(),
-//!         service: "admin_service".to_string(),
-//!         scopes: vec!["admin_service:create".to_string()],
-//!     };
-//!
-//!     let context = AuthContext {
-//!         user: None,
-//!         claims: Some(&claims),
-//!         resource: None,
-//!     };
-//!
-//!     let mut authorizator = Authorizator::new();
-//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::JWT, "admin_service", "create");
-//!     match result {
-//!         Ok(_) => println!("✅ Access granted via JWT."),
-//!         Err(e) => println!("❌ Access denied via JWT: {}", e),
-//!     }
-//!     Ok(())
-//! }
-//! ```
 //!
 //! ### 🏢 ABAC (Attribute-Based Access Control)
 //!
@@ -115,60 +43,147 @@
 //!         resource: Some(&resource),
 //!     };
 //!
-//!     let mut authorizator = Authorizator::new();
-//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::ABAC, "docs", "read");
-//!     assert!(result.is_ok());
-//!     match result {
-//!          Ok(_) => println!("✅ Access granted via ABAC."),
-//!          Err(e) => println!("❌ ABAC check failed: {}", e),
+//!      let authorized = Authorizator::new("ABAC");
+//!      match authorized {
+//!         Ok(mut auth) => {
+//!             let result = auth.authorize_with_strategy(&context, "docs", "read");
+//!             match result {
+//!                 Ok(_) => println!("✅ Access granted via ABAC."),
+//!                 Err(e) => println!("❌ ABAC check failed: {}", e),
+//!             }
+//!             
+//!         },
+//!         Err(e) => {
+//!             println!("Error initializing Authorization: {}", e);
+//!         }
 //!      }
 //!
 //!     Ok(())
 //! }
 //! ```
-//! ## 🔐 Generic Trait
+//! 
 //!
-//! The `Identifiable` trait is used to support identity-based access across various types:
+//! ### 🔐 RBAC (Role-Based Access Control)
 //!
 //! ```rust
-//! pub trait Identifiable {
-//!     fn identity(&self) -> String;
+//! use auth_kit::auth::*;
+//! use bcrypt::{hash, DEFAULT_COST};
+//! use auth_kit::error::AuthError;
+//! use auth_kit::auth::authenticator::Authenticator;
+//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::model::{AuthContext, AuthStrategy, Permission};
+//!
+//! fn main() -> Result<(), AuthError> {
+//!
+//!     let mut auth = Authenticator::new();
+//!
+//!     let password_hash = hash("secret123", DEFAULT_COST)
+//!         .map_err(|e| AuthError::PasswordHashingFailed(e.to_string()))?;
+//!
+//!     match auth.register("admin@example.com", &password_hash) {
+//!         Ok(()) => println!("User registered"),
+//!         Err(AuthError::EmailAlreadyRegistered) => println!("Email already in use"),
+//!         Err(e) => eprintln!("Registration failed: {:?}", e),
+//!     }
+//!
+//!     let mut user = auth.users.get("admin@example.com").cloned().expect("User must exist");
+//!     user.role.permissions.push(Permission::Create);
+//!
+//!     let context = AuthContext {
+//!         user: Some(&user),
+//!         claims: None,
+//!         resource: None,
+//!     };
+//!
+//!     let authorized = Authorizator::new("RBAC");
+//!     match authorized {
+//!         Ok(mut auth) => {
+//!             let context = AuthContext {
+//!                 user: Some(&user),
+//!                 claims: None,
+//!                 resource: None,
+//!             };
+//!             let result = auth.authorize_with_strategy(&context, "service", "create");
+//!             match result {
+//!                 Ok(_) => println!("✅  Access granted via RBAC."),
+//!                 Err(e) => println!("❌  Access denied: {:?}", e),
+//!             }
+//!         },
+//!         Err(e) => {
+//!             println!("Error initializing Authorizator: {}", e);
+//!         }
+//!     }
+//!     Ok(())
 //! }
 //! ```
 //!
-//! This allows `authorize()` to work generically on `User`, `Claims`, or other custom types.
+//! ### 🪪 SBA (Scope-Based Authorization)
 //!
-//! ## 🧪 Run Examples
+//! ```rust
+//! use auth_kit::auth::*;
 //!
-//! - `cargo run --example basic` — RBAC-based access
-//! - `cargo run --example jwt` — JWT scope authorization
+//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::model::{AuthContext, AuthStrategy, Claims};
 //!
-//! ## 📚 Dependencies
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let claims = Claims {
+//!         email: "jwt@example.com".to_string(),
+//!         service: "admin_service".to_string(),
+//!         scopes: vec!["admin_service:create".to_string()],
+//!     };
 //!
-//! - [`thiserror`](https://crates.io/crates/thiserror) — Friendly error definitions
-//! - [`serde`](https://crates.io/crates/serde) — Deserialization of claims (for JWT)
+//!     let context = AuthContext {
+//!         user: None,
+//!         claims: Some(&claims),
+//!         resource: None,
+//!     };
 //!
-//! ## 📁 Example Structure
-//!
-//! ```text
-//! auth_kit/
-//! ├── src/
-//! │   ├── lib.rs
-//! │   └── auth--old
-//! └── examples/
-//!     ├── basic.rs
-//!     └── jwt.rs
+//!     let authorized = Authorizator::new("SBA");
+//!     match authorized {
+//!         Ok(mut auth) => {
+//!             let result = auth.authorize_with_strategy(&context, "admin_service", "create");
+//!             match result {
+//!                 Ok(_) => println!("✅ Access granted via SBA."),
+//!                 Err(e) => println!("❌ Access denied via SBA: {}", e),
+//!             }
+//!         },
+//!         Err(e) => {
+//!             println!("Error initializing Authorization: {}", e);
+//!         }
+//!     }
+//!     Ok(())
+//! }
 //! ```
 //!
-//! You can extend the system with custom strategies, OAuth2 tokens, session handling, or more advanced ABAC policies.
-//!
 //! ---
-//!
+//! 
 //! ## License
 //! 
 //! Licensed under:
 //! - Apache License, Version 2.0 [LICENSE](http://www.apache.org/licenses/LICENSE-2.0.txt)
+//! 
+//! ---
 //!
+//! ## 🧑‍💻 Author
+//!
+//! Created and maintained by [Jerry Maheswara](https://github.com/jerry-maheswara-github)
+//!
+//! Feel free to reach out for suggestions, issues, or improvements!
+//!
+//! ---
+//!
+//! ## ❤️ Built with Love in Rust
+//!
+//! This project is built with ❤️ using **Rust** — a systems programming language that is safe, fast, and concurrent. Rust is the perfect choice for building reliable and efficient applications.
+//!
+//! ---
+//!
+//! ## 👋 Contributing
+//!
+//! Pull requests, issues, and feedback are welcome!  
+//! If you find this crate useful, give it a ⭐ and share it with others in the Rust community.
+//!
+//! ---
 
 pub mod error;
 pub mod auth;
