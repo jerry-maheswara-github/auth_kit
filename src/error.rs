@@ -14,12 +14,22 @@ pub enum AuthError {
     #[error("Invalid or expired token")]
     InvalidToken,
 
-    #[error("Access denied to service '{service}' with permission '{permission}'")]
+    #[error("Access denied to user '{user}' for service '{service}' with permission '{permission}'")]
     AccessDenied {
+        user: String,
         service: String,
         permission: String,
     },
 
     #[error("Password hashing failed: {0}")]
     PasswordHashingFailed(String),
+
+    #[error("Missing user in context")]
+    MissingUser,
+
+    #[error("Missing claims in context")]
+    MissingClaims,
+
+    #[error("Missing resource in context")]
+    MissingResource,
 }
