@@ -19,29 +19,34 @@
 //! use auth_kit::auth::*;
 //! use bcrypt::{hash, DEFAULT_COST};
 //! use auth_kit::error::AuthError;
+//! use auth_kit::auth::authenticator::Authenticator;
+//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::model::{AuthContext, AuthStrategy, Permission};
 //! 
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let mut auth = Authenticator::new();
 //! 
+//!     let mut auth = Authenticator::new();
+//!
 //!     let password_hash = hash("secret123", DEFAULT_COST)
 //!         .map_err(|e| AuthError::PasswordHashingFailed(e.to_string()))?;
-//!     
+//!
 //!     match auth.register("admin@example.com", &password_hash) {
 //!         Ok(()) => println!("User registered"),
 //!         Err(AuthError::EmailAlreadyRegistered) => println!("Email already in use"),
 //!         Err(e) => eprintln!("Registration failed: {:?}", e),
 //!     }
-//!     
+//!
 //!     let mut user = auth.users.get("admin@example.com").cloned().expect("User must exist");
 //!     user.role.permissions.push(Permission::Create);
-//!     
+//!
 //!     let context = AuthContext {
 //!         user: Some(&user),
 //!         claims: None,
 //!         resource: None,
 //!     };
-//! 
-//!     let result = auth.authorize_with_strategy(&context, AuthStrategy::RBAC, "admin_service", "create");
+//!
+//!     let mut authorizator = Authorizator::new();
+//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::RBAC, "admin_service", "create");
 //!     match result {
 //!         Ok(_) => println!("✅ Access granted via RBAC."),
 //!         Err(e) => println!("❌  {}", e),
@@ -55,6 +60,9 @@
 //! ```rust
 //! use auth_kit::auth::*;
 //!
+//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::model::{AuthContext, AuthStrategy, Claims};
+//! 
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let claims = Claims {
 //!         email: "jwt@example.com".to_string(),
@@ -68,8 +76,8 @@
 //!         resource: None,
 //!     };
 //!
-//!     let mut auth = Authenticator::new();
-//!     let result = auth.authorize_with_strategy(&context, AuthStrategy::JWT, "admin_service", "create");
+//!     let mut authorizator = Authorizator::new();
+//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::JWT, "admin_service", "create");
 //!     match result {
 //!         Ok(_) => println!("✅ Access granted via JWT."),
 //!         Err(e) => println!("❌ Access denied via JWT: {}", e),
@@ -81,7 +89,8 @@
 //! ### 🏢 ABAC (Attribute-Based Access Control)
 //!
 //! ```rust
-//! use auth_kit::auth::*;
+//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::model::{AuthContext, AuthStrategy, Resource, Role, User};
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let user = User {
@@ -106,14 +115,14 @@
 //!         resource: Some(&resource),
 //!     };
 //!
-//!     let mut auth = Authenticator::new();
-//!     let result = auth.authorize_with_strategy(&context, AuthStrategy::ABAC, "docs", "read");
+//!     let mut authorizator = Authorizator::new();
+//!     let result = authorizator.authorize_with_strategy(&context, AuthStrategy::ABAC, "docs", "read");
 //!     assert!(result.is_ok());
 //!     match result {
 //!          Ok(_) => println!("✅ Access granted via ABAC."),
 //!          Err(e) => println!("❌ ABAC check failed: {}", e),
 //!      }
-//! 
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -145,7 +154,7 @@
 //! auth_kit/
 //! ├── src/
 //! │   ├── lib.rs
-//! │   └── auth.rs
+//! │   └── auth--old
 //! └── examples/
 //!     ├── basic.rs
 //!     └── jwt.rs
@@ -154,12 +163,13 @@
 //! You can extend the system with custom strategies, OAuth2 tokens, session handling, or more advanced ABAC policies.
 //!
 //! ---
-//! 
+//!
 //! ## License
 //! 
 //! Licensed under:
 //! - Apache License, Version 2.0 [LICENSE](http://www.apache.org/licenses/LICENSE-2.0.txt)
-//! 
+//!
 
-pub mod auth;
 pub mod error;
+pub mod auth;
+pub mod model;

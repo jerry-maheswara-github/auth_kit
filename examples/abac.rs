@@ -1,6 +1,7 @@
-use auth_kit::auth::*;
+use auth_kit::auth::authorizator::Authorizator;
+use auth_kit::model::{AuthContext, Resource, Role, User};
 
- fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
      let user = User {
          email: "abac@example.com".to_string(),
          password_hash: "".to_string(),
@@ -23,11 +24,20 @@ use auth_kit::auth::*;
          resource: Some(&resource),
      };
 
-     let mut auth = Authenticator::new();
-     let result = auth.authorize_with_strategy(&context, AuthStrategy::ABAC, "docs", "read");
-     match result {
-         Ok(_) => println!("✅ Access granted via ABAC."),
-         Err(e) => println!("❌ ABAC check failed: {}", e),
+     let authorized = Authorizator::new("ABAC");
+     match authorized {
+        Ok(mut auth) => {
+            let result = auth.authorize_with_strategy(&context, "docs", "read");
+            match result {
+                Ok(_) => println!("✅ Access granted via ABAC."),
+                Err(e) => println!("❌ ABAC check failed: {}", e),
+            }
+            
+        },
+        Err(e) => {
+            println!("Error initializing Authorization: {}", e);
+        }
      }
+
      Ok(())
  }

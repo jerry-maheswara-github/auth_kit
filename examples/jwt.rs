@@ -1,4 +1,5 @@
-use auth_kit::auth::*;
+use auth_kit::auth::authorizator::Authorizator;
+use auth_kit::model::{AuthContext, Claims};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let claims = Claims {
@@ -13,12 +14,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         resource: None,
     };
 
-    let mut auth = Authenticator::new();
-    let result = auth.authorize_with_strategy(&context, AuthStrategy::JWT, "admin_service", "create");
-    match result {
-        Ok(_) => println!("✅ Access granted via JWT."),
-        Err(e) => println!("❌ Access denied via JWT: {}", e),
+    let authorized = Authorizator::new("JWT");
+    match authorized {
+        Ok(mut auth) => {
+            let result = auth.authorize_with_strategy(&context, "admin_service", "create");
+            match result {
+                Ok(_) => println!("✅ Access granted via JWT."),
+                Err(e) => println!("❌ Access denied via JWT: {}", e),
+            }
+        },
+        Err(e) => {
+            println!("Error initializing Authorization: {}", e);
+        }
     }
+
 
     Ok(())
 }
