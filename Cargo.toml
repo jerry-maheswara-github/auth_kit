@@ -1,0 +1,18 @@
+[package]
+name = "auth_kit"
+version = "0.1.0"
+edition = "2024"
+authors = ["Jerry Maheswara  <jerrymaheswara@gmail.com>"]
+description = "Toolkit for Authentication and Authorization in Rust"
+license = "Apache-2.0"
+repository = "https://github.com/yourname/auth_kit"
+documentation = "https://docs.rs/auth_kit"
+readme = "README.md"
+keywords = ["authentication", "authorization", "security", "login"]
+categories = ["authentication", "web-programming"]
+exclude = ["/.github", "/.gitignore", "/.vscode", "/target"]
+
+[dependencies]
+bcrypt = "0.17.0"
+serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "2.0.12"
