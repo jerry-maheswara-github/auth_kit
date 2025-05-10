@@ -1,23 +1,29 @@
-//! # AuthKit
+//! # auth_kit
 //!
 //! A flexible and extensible authentication and authorization library in Rust,
-//! supporting multiple strategies including **ABAC** (Attribute-Based Access Control),
+//! designed to support multiple strategies including **ABAC** (Attribute-Based Access Control),
 //! **RBAC** (Role-Based Access Control), and **SBA** (Scope-Based Authorization)
 //!
+//! This crate is suitable for use in both API servers and embedded authorization layers.
+//! 
+//! ---
+//! 
 //! ## ✨ Features
+//! 
+//! - **Authentication (auth_n)**: Handles register, login, and reset_password.
+//! - **Authorization (auth_z)**: Supports **ABAC** (Attribute-Based Access Control), 
+//!   **RBAC** (Role-Based Access Control), and **SBA** (Scope-Based Authorization)
+//! - **Scope matching**: Flexible support for OAuth2-style scopes with customizable formats.
 //!
-//! - Role and permission system based on the `Permission` enum.
-//! - Generic `authorize()` function with custom logic via closures.
-//! - Supports multiple access strategies: ABAC, RBAC, SBA.
-//! - Generic subject support via the `Identifiable` trait.
-//!
+//!---
+//! 
 //! ## 🚀 Quick Start
 //!
 //!
 //! ### 🏢 ABAC (Attribute-Based Access Control)
 //!
-//! ```rust
-//! use auth_kit::auth::authorizator::Authorizator;
+//!```rust
+//! use auth_kit::auth::auth_z::Authorization;
 //! use auth_kit::model::{AuthContext, AuthStrategy, Resource, Role, User};
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -38,15 +44,15 @@
 //!     };
 //!
 //!     let context = AuthContext {
-//!         user: Some(&user),
+//!         user: Some(user),
 //!         claims: None,
-//!         resource: Some(&resource),
+//!         resource: Some(resource),
 //!     };
 //!
-//!      let authorized = Authorizator::new("ABAC");
+//!      let authorized = Authorization::new("ABAC");
 //!      match authorized {
 //!         Ok(mut auth) => {
-//!             let result = auth.authorize_with_strategy(&context, "docs", "read");
+//!             let result = auth.authorize(&context, "docs", "read", None);
 //!             match result {
 //!                 Ok(_) => println!("✅ Access granted via ABAC."),
 //!                 Err(e) => println!("❌ ABAC check failed: {}", e),
@@ -65,52 +71,46 @@
 //!
 //! ### 🔐 RBAC (Role-Based Access Control)
 //!
-//! ```rust
+//!```rust
 //! use auth_kit::auth::*;
 //! use bcrypt::{hash, DEFAULT_COST};
 //! use auth_kit::error::AuthError;
-//! use auth_kit::auth::authenticator::Authenticator;
-//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::auth::auth_n::Authentication;
+//! use auth_kit::auth::auth_z::Authorization;
 //! use auth_kit::model::{AuthContext, AuthStrategy, Permission};
 //!
 //! fn main() -> Result<(), AuthError> {
 //!
-//!     let mut auth = Authenticator::new();
+//!     let mut authn = Authentication::new();
 //!
 //!     let password_hash = hash("secret123", DEFAULT_COST)
 //!         .map_err(|e| AuthError::PasswordHashingFailed(e.to_string()))?;
 //!
-//!     match auth.register("admin@example.com", &password_hash) {
+//!     match authn.register("admin@example.com", &password_hash) {
 //!         Ok(()) => println!("User registered"),
 //!         Err(AuthError::EmailAlreadyRegistered) => println!("Email already in use"),
 //!         Err(e) => eprintln!("Registration failed: {:?}", e),
 //!     }
 //!
-//!     let mut user = auth.users.get("admin@example.com").cloned().expect("User must exist");
+//!     let mut user = authn.users.get("admin@example.com").cloned().expect("User must exist");
 //!     user.role.permissions.push(Permission::Create);
 //!
-//!     let context = AuthContext {
-//!         user: Some(&user),
-//!         claims: None,
-//!         resource: None,
-//!     };
-//!
-//!     let authorized = Authorizator::new("RBAC");
+//!     let authorized = Authorization::new("RBAC");
 //!     match authorized {
-//!         Ok(mut auth) => {
+//!         Ok(mut authz) => {
 //!             let context = AuthContext {
-//!                 user: Some(&user),
+//!                 user: Some(user),
 //!                 claims: None,
 //!                 resource: None,
 //!             };
-//!             let result = auth.authorize_with_strategy(&context, "service", "create");
+//!             let result = authz.authorize(&context, "service", "create", None);
 //!             match result {
 //!                 Ok(_) => println!("✅  Access granted via RBAC."),
 //!                 Err(e) => println!("❌  Access denied: {:?}", e),
 //!             }
 //!         },
 //!         Err(e) => {
-//!             println!("Error initializing Authorizator: {}", e);
+//!             println!("Error initializing Authorization: {}", e);
 //!         }
 //!     }
 //!     Ok(())
@@ -122,7 +122,7 @@
 //! ```rust
 //! use auth_kit::auth::*;
 //!
-//! use auth_kit::auth::authorizator::Authorizator;
+//! use auth_kit::auth::auth_z::Authorization;
 //! use auth_kit::model::{AuthContext, AuthStrategy, Claims};
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -134,14 +134,14 @@
 //!
 //!     let context = AuthContext {
 //!         user: None,
-//!         claims: Some(&claims),
+//!         claims: Some(claims),
 //!         resource: None,
 //!     };
 //!
-//!     let authorized = Authorizator::new("SBA");
+//!     let authorized = Authorization::new("SBA");
 //!     match authorized {
-//!         Ok(mut auth) => {
-//!             let result = auth.authorize_with_strategy(&context, "admin_service", "create");
+//!         Ok(mut authz) => {
+//!             let result = authz.authorize(&context, "admin_service", "create", Some(":"));
 //!             match result {
 //!                 Ok(_) => println!("✅ Access granted via SBA."),
 //!                 Err(e) => println!("❌ Access denied via SBA: {}", e),
@@ -185,6 +185,12 @@
 //!
 //! ---
 
+/// Error definitions and shared error types.
 pub mod error;
+
+/// Authentication and authorization logic.
 pub mod auth;
+
+/// Common data types used in authentication and policy evaluation.
+/// Shared data structures such as `User`, `Role`, `Claims`, etc.
 pub mod model;

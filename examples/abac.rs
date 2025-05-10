@@ -1,4 +1,4 @@
-use auth_kit::auth::authorizator::Authorizator;
+use auth_kit::auth::auth_z::Authorization;
 use auth_kit::model::{AuthContext, Resource, Role, User};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,20 +19,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
      };
 
      let context = AuthContext {
-         user: Some(&user),
+         user: Some(user),
          claims: None,
-         resource: Some(&resource),
+         resource: Some(resource),
      };
 
-     let authorized = Authorizator::new("ABAC");
+     let authorized = Authorization::new("ABAC");
      match authorized {
         Ok(mut auth) => {
-            let result = auth.authorize_with_strategy(&context, "docs", "read");
+            let result = auth.authorize(&context, "", "", None);
             match result {
                 Ok(_) => println!("✅ Access granted via ABAC."),
                 Err(e) => println!("❌ ABAC check failed: {}", e),
             }
-            
+
         },
         Err(e) => {
             println!("Error initializing Authorization: {}", e);

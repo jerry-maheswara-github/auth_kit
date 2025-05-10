@@ -1,10 +1,10 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
-use auth_kit::auth::authenticator::Authenticator;
+use auth_kit::auth::auth_n::Authentication;
 use auth_kit::error::AuthError;
 use auth_kit::model::Permission;
 
 fn main() -> Result<(), AuthError> {
-    let mut auth = Authenticator::new();
+    let mut auth = Authentication::new();
 
     // Hash the password before registration
     let password_hash = hash("secret123", DEFAULT_COST)

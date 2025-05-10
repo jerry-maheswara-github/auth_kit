@@ -3,11 +3,11 @@ use crate::model::{Role, User};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Authenticator {
+pub struct Authentication {
     pub users: HashMap<String, User>,
 }
 
-impl Authenticator {
+impl Authentication {
     pub fn new() -> Self {
         Self {
             users: HashMap::new(),

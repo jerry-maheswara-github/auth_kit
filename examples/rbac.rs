@@ -1,13 +1,12 @@
-use auth_kit::auth::authenticator::Authenticator;
-use auth_kit::auth::authorizator::Authorizator;
+use auth_kit::auth::auth_n::Authentication;
+use auth_kit::auth::auth_z::Authorization;
 use auth_kit::error::AuthError;
 use auth_kit::model::{AuthContext, Permission};
 use bcrypt::{hash, DEFAULT_COST};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut authenticator = Authenticator::new();
-    let authorized = Authorizator::new("RBAC");
-    
+    let mut authenticator = Authentication::new();
+    let authorized = Authorization::new("RBAC");
 
     let password_hash = hash("secret123", DEFAULT_COST)
         .map_err(|e| AuthError::PasswordHashingFailed(e.to_string()))?;
@@ -24,18 +23,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match authorized {
         Ok(mut auth) => {
             let context = AuthContext {
-                user: Some(&user),
+                user: Some(user),
                 claims: None,
                 resource: None,
             };
-            let result = auth.authorize_with_strategy(&context, "service", "create");
+            let result = auth.authorize(&context, "service", "create", None);
             match result {
                 Ok(_) => println!("✅  Access granted via RBAC."),
                 Err(e) => println!("❌  Access denied: {:?}", e),
             }
         },
         Err(e) => {
-            println!("Error initializing Authorizator: {}", e);
+            println!("Error initializing Authorization: {}", e);
         }
     }
 

@@ -1,44 +1,49 @@
+use crate::auth::scope::{authorize_with_matcher, FlexibleMatcher};
 use crate::error::AuthError;
 use crate::model::{AuthContext, AuthStrategy, Identifiable};
 
-pub struct Authorizator {
+pub struct Authorization {
     strategy: AuthStrategy, 
 }
 
 
-impl Authorizator {
+impl Authorization {
     pub fn new(strategy: &str) -> Result<Self, &'static str> {
         let strategy = AuthStrategy::from_str(strategy)?;
         Ok(Self { strategy })
     }
     
-    pub fn authorize_with_strategy(
+    pub fn authorize(
         &mut self,
         context: &AuthContext,
         service: &str,
         permission: &str,
+        delimiter: Option<&str>,
     ) -> Result<(), AuthError> {
         match self.strategy {
             AuthStrategy::ABAC => {
-                let user = context.user.ok_or(AuthError::MissingUser)?;
-                let resource = context.resource.ok_or(AuthError::MissingResource)?;
-                authorize(user, service, permission, |u, _, _| {
+                let user = context.user.clone().ok_or(AuthError::MissingUser)?;
+                let resource = context.resource.clone().ok_or(AuthError::MissingResource)?;
+                gen_authorize(&user, service, permission, |u , _, _| {
                     u.department == resource.department && u.clearance_level >= resource.required_level
                 })
             }
             
             AuthStrategy::RBAC => {
-                let user = context.user.ok_or(AuthError::MissingUser)?;
-                authorize(user, service, permission, |u, _, p| {
+                let user = context.user.clone().ok_or(AuthError::MissingUser)?;
+                gen_authorize(&user, service, permission, |u, _, p| {
                     u.role.permissions.iter().any(|perm| format!("{:?}", perm).eq_ignore_ascii_case(p))
                 })
             }
 
             AuthStrategy::SBA => {
-                let claims = context.claims.ok_or(AuthError::MissingClaims)?;
-                authorize(claims, service, permission, |c, s, p| {
-                    let scope = format!("{}:{}", s, p);
-                    c.scopes.contains(&scope)
+                let claims = context.claims.clone().ok_or(AuthError::MissingClaims)?;
+                let required = format!("{}{:?}{}", service, delimiter, permission);
+
+                let scope_str = claims.scopes.join(" ");
+
+                gen_authorize(&claims, service, permission, |_, _, _| {
+                    authorize_with_matcher::<FlexibleMatcher>(&scope_str, &required)
                 })
             }
         }
@@ -47,7 +52,7 @@ impl Authorizator {
 }
 
 
-pub fn authorize<U, S, P, F>(
+pub fn gen_authorize<U, S, P, F>(
     user: &U,
     service: S,
     permission: P,
