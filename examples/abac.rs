@@ -29,8 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(mut auth) => {
             let result = auth.authorize(&context, "", "", None);
             match result {
-                Ok(_) => println!("✅ Access granted via ABAC."),
-                Err(e) => println!("❌ ABAC check failed: {}", e),
+                Ok(_) => println!("Access granted via ABAC."),
+                Err(e) => println!("ABAC check failed: {}", e),
             }
 
         },

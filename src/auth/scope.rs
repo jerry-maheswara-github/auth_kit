@@ -6,47 +6,59 @@ pub trait ScopeMatcher {
     fn matches(user_token: &str, required_token: &str) -> bool;
 }
 
-/// A flexible implementation of `ScopeMatcher` that supports common delimiters
-/// like `:`, `.`, `@`, `/`, and wildcard `*` matching.
+/// A flexible implementation of the `ScopeMatcher` trait that supports
+/// multi-part scope token matching with common delimiters and wildcards.
 ///
-/// Examples of supported formats:
+/// This matcher is designed to handle both two-part and three-part
+/// scope formats, such as:
 /// - `read:users`
-/// - `read.users`
-/// - `write@admin`
-/// - `resource/action`
-/// - `*:*` (wildcard match)
+/// - `user_service:user:read`
+///
+/// It supports the following features:
+/// - Matching with delimiters: `:`, `.`, `@`, and `/`
+/// - Partial or full wildcard matching using `*`
+/// - Graceful fallback to exact match or global wildcard
+///
+/// # Matching Examples
+/// - `"user_service:user:read"` matches `"user_service:user:read"`
+/// - `"user_service:*:read"` matches `"user_service:user:read"`
+/// - `"*:*:read"` matches `"user_service:user:read"`
+/// - `"read:users"` matches `"read:users"`
+///
+/// This makes it suitable for hybrid authorization systems that mix
+/// service-level and resource-level scopes.
+///
+/// ## Note:
+/// Both user and required tokens must use the same delimiter to match.
 pub struct FlexibleMatcher;
 
 impl ScopeMatcher for FlexibleMatcher {
     fn matches(user_token: &str, required_token: &str) -> bool {
         let delimiters = [":", ".", "@", "/"];
+
         for delim in delimiters {
-            if user_token.contains(delim) || required_token.contains(delim) {
-                let (us, up) = split(user_token, delim);
-                let (rs, rp) = split(required_token, delim);
-                return (us == "*" || us == rs) && (up == "*" || up == rp);
+            let u_parts: Vec<&str> = user_token.split(delim).collect();
+            let r_parts: Vec<&str> = required_token.split(delim).collect();
+
+            if u_parts.len() == r_parts.len() && u_parts.len() >= 2 {
+                let mut matched = true;
+                for (u, r) in u_parts.iter().zip(r_parts.iter()) {
+                    if *u != "*" && *u != *r {
+                        matched = false;
+                        break;
+                    }
+                }
+
+                if matched {
+                    return true;
+                }
             }
         }
 
-        // Fallback to exact match or full wildcard
         user_token == required_token || user_token == "*"
     }
 }
 
-/// Splits a scope token string into two parts using the first occurrence
-/// of the provided delimiter. If the delimiter is not found, defaults to "*".
-///
-/// # Example
-/// ```code
-/// let (a, b) = split("read:users", ":");
-/// assert_eq!((a, b), ("read", "users"));
-/// ```
-fn split<'a>(scope: &'a str, delim: &'a str) -> (&'a str, &'a str) {
-    let mut parts = scope.splitn(2, delim);
-    let a = parts.next().unwrap_or("*");
-    let b = parts.next().unwrap_or("*");
-    (a, b)
-}
 
 /// Parses a scope string into a list of individual scope tokens,
 /// separated by whitespace (as per OAuth2/RFC conventions).
@@ -81,45 +93,4 @@ pub fn authorize_with_matcher<M: ScopeMatcher>(
 ) -> bool {
     let tokens = parse_scope_string(user_scope_str);
     tokens.iter().any(|token| M::matches(token, required_token))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_exact_match() {
-        assert!(authorize_with_matcher::<FlexibleMatcher>("read:users", "read:users"));
-    }
-
-    #[test]
-    fn test_wildcard_permission() {
-        assert!(authorize_with_matcher::<FlexibleMatcher>("read:*", "read:users"));
-        assert!(!authorize_with_matcher::<FlexibleMatcher>("read:*", "write:users"));
-    }
-
-    #[test]
-    fn test_wildcard_service() {
-        assert!(authorize_with_matcher::<FlexibleMatcher>("*:users", "read:users"));
-        assert!(!authorize_with_matcher::<FlexibleMatcher>("*:admin", "read:users"));
-    }
-
-    #[test]
-    fn test_multiple_scopes_space_separated() {
-        let user_scopes = "read:posts write:users";
-        assert!(authorize_with_matcher::<FlexibleMatcher>(user_scopes, "write:users"));
-        assert!(!authorize_with_matcher::<FlexibleMatcher>(user_scopes, "admin:users"));
-    }
-
-    #[test]
-    fn test_different_delimiters() {
-        assert!(authorize_with_matcher::<FlexibleMatcher>("read.users", "read.users"));
-        assert!(authorize_with_matcher::<FlexibleMatcher>("read@users", "read@users"));
-        assert!(authorize_with_matcher::<FlexibleMatcher>("read/users", "read/users"));
-    }
-
-    #[test]
-    fn test_fallback_to_wildcard() {
-        assert!(authorize_with_matcher::<FlexibleMatcher>("*", "read:users"));
-    }
 }

@@ -29,8 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let result = auth.authorize(&context, "service", "create", None);
             match result {
-                Ok(_) => println!("✅  Access granted via RBAC."),
-                Err(e) => println!("❌  Access denied: {:?}", e),
+                Ok(_) => println!("Access granted via RBAC."),
+                Err(e) => println!("Access denied: {:?}", e),
             }
         },
         Err(e) => {

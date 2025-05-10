@@ -1,4 +1,4 @@
-//! # auth_kit
+//! # Toolkit for Authentication and Authorization in Rust
 //!
 //! A flexible and extensible authentication and authorization library in Rust,
 //! designed to support multiple strategies including **ABAC** (Attribute-Based Access Control),
@@ -51,11 +51,11 @@
 //!
 //!      let authorized = Authorization::new("ABAC");
 //!      match authorized {
-//!         Ok(mut auth) => {
-//!             let result = auth.authorize(&context, "docs", "read", None);
+//!         Ok(mut authz) => {
+//!             let result = authz.authorize(&context, "docs", "read", None);
 //!             match result {
-//!                 Ok(_) => println!("✅ Access granted via ABAC."),
-//!                 Err(e) => println!("❌ ABAC check failed: {}", e),
+//!                 Ok(_) => println!("Access granted via ABAC."),
+//!                 Err(e) => println!("ABAC check failed: {}", e),
 //!             }
 //!             
 //!         },
@@ -72,7 +72,6 @@
 //! ### 🔐 RBAC (Role-Based Access Control)
 //!
 //!```rust
-//! use auth_kit::auth::*;
 //! use bcrypt::{hash, DEFAULT_COST};
 //! use auth_kit::error::AuthError;
 //! use auth_kit::auth::auth_n::Authentication;
@@ -105,8 +104,8 @@
 //!             };
 //!             let result = authz.authorize(&context, "service", "create", None);
 //!             match result {
-//!                 Ok(_) => println!("✅  Access granted via RBAC."),
-//!                 Err(e) => println!("❌  Access denied: {:?}", e),
+//!                 Ok(_) => println!("Access granted via RBAC."),
+//!                 Err(e) => println!("Access denied: {:?}", e),
 //!             }
 //!         },
 //!         Err(e) => {
@@ -120,8 +119,6 @@
 //! ### 🪪 SBA (Scope-Based Authorization)
 //!
 //! ```rust
-//! use auth_kit::auth::*;
-//!
 //! use auth_kit::auth::auth_z::Authorization;
 //! use auth_kit::model::{AuthContext, AuthStrategy, Claims};
 //!
@@ -143,8 +140,8 @@
 //!         Ok(mut authz) => {
 //!             let result = authz.authorize(&context, "admin_service", "create", Some(":"));
 //!             match result {
-//!                 Ok(_) => println!("✅ Access granted via SBA."),
-//!                 Err(e) => println!("❌ Access denied via SBA: {}", e),
+//!                 Ok(_) => println!("Access granted via SBA."),
+//!                 Err(e) => println!("Access denied via SBA: {}", e),
 //!             }
 //!         },
 //!         Err(e) => {
@@ -157,7 +154,7 @@
 //!
 //! ---
 //! 
-//! ## License
+//! ## 📜  License
 //! 
 //! Licensed under:
 //! - Apache License, Version 2.0 [LICENSE](http://www.apache.org/licenses/LICENSE-2.0.txt)
@@ -192,5 +189,4 @@ pub mod error;
 pub mod auth;
 
 /// Common data types used in authentication and policy evaluation.
-/// Shared data structures such as `User`, `Role`, `Claims`, etc.
 pub mod model;
