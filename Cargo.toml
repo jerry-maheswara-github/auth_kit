@@ -1,11 +1,11 @@
 [package]
 name = "auth_kit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Jerry Maheswara  <jerrymaheswara@gmail.com>"]
 description = "Toolkit for Authentication and Authorization in Rust"
 license = "Apache-2.0"
-repository = "https://github.com/yourname/auth_kit"
+repository = "https://github.com/jerry-maheswara-github/auth_kit"
 documentation = "https://docs.rs/auth_kit"
 readme = "README.md"
 keywords = ["authentication", "authorization", "security", "login"]
