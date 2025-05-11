@@ -7,7 +7,7 @@ pub trait ScopeMatcher {
 }
 
 /// A flexible implementation of the `ScopeMatcher` trait that supports
-/// multi-part scope token matching with common delimiters and wildcards.
+/// multipart scope token matching with common delimiters and wildcards.
 ///
 /// This matcher is designed to handle both two-part and three-part
 /// scope formats, such as:
