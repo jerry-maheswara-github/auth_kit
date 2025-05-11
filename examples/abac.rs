@@ -1,7 +1,8 @@
 use auth_kit::auth::auth_z::Authorization;
+use auth_kit::error::AuthError;
 use auth_kit::model::{AuthContext, Resource, Role, User};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), AuthError> {
      let user = User {
          email: "abac@example.com".to_string(),
          password_hash: "".to_string(),
@@ -30,12 +31,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let result = auth.authorize(&context, "", "", None);
             match result {
                 Ok(_) => println!("Access granted via ABAC."),
-                Err(e) => println!("ABAC check failed: {}", e),
+                Err(e) => println!("ABAC check failed: {}", e.to_string()),
             }
 
         },
         Err(e) => {
-            println!("Error initializing Authorization: {}", e);
+            println!("Error initializing Authorization: {}", e.to_string());
         }
      }
 

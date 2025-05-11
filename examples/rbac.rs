@@ -4,7 +4,7 @@ use auth_kit::error::AuthError;
 use auth_kit::model::{AuthContext, Permission};
 use bcrypt::{hash, DEFAULT_COST};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), AuthError> {
     let mut authenticator = Authentication::new();
     let authorized = Authorization::new("RBAC");
 
@@ -30,11 +30,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let result = auth.authorize(&context, "service", "create", None);
             match result {
                 Ok(_) => println!("Access granted via RBAC."),
-                Err(e) => println!("Access denied: {:?}", e),
+                Err(e) => println!("Access denied: {}", e.to_string()),
             }
         },
         Err(e) => {
-            println!("Error initializing Authorization: {}", e);
+            println!("Error initializing Authorization: {}", e.to_string());
         }
     }
 

@@ -24,9 +24,10 @@
 
 ```rust
  use auth_kit::auth::auth_z::Authorization;
+ use auth_kit::error::AuthError;
  use auth_kit::model::{AuthContext, AuthStrategy, Resource, Role, User};
 
- fn main() -> Result<(), Box<dyn std::error::Error>> {
+ fn main() -> Result<(), AuthError> {
      let user = User {
          email: "abac@example.com".to_string(),
          password_hash: "".to_string(),
@@ -55,12 +56,12 @@
              let result = authz.authorize(&context, "docs", "read", None);
              match result {
                  Ok(_) => println!("Access granted via ABAC."),
-                 Err(e) => println!("ABAC check failed: {}", e),
+                 Err(e) => println!("ABAC check failed: {}", e.to_string()),
              }
              
          },
          Err(e) => {
-             println!("Error initializing Authorization: {}", e);
+             println!("Error initializing Authorization: {}", e.to_string());
          }
       }
 
@@ -105,11 +106,11 @@
              let result = authz.authorize(&context, "service", "create", None);
              match result {
                  Ok(_) => println!("Access granted via RBAC."),
-                 Err(e) => println!("Access denied: {:?}", e),
+                 Err(e) => println!("Access denied: {}", e.to_string()),
              }
          },
          Err(e) => {
-             println!("Error initializing Authorization: {}", e);
+             println!("Error initializing Authorization: {}", e.to_string());
          }
      }
      Ok(())
@@ -120,9 +121,10 @@
 
  ```rust
  use auth_kit::auth::auth_z::Authorization;
+ use auth_kit::error::AuthError;
  use auth_kit::model::{AuthContext, AuthStrategy, Claims};
 
- fn main() -> Result<(), Box<dyn std::error::Error>> {
+ fn main() -> Result<(), AuthError> {
      let claims = Claims {
          email: "jwt@example.com".to_string(),
          service: "admin_service".to_string(),
@@ -141,11 +143,11 @@
              let result = authz.authorize(&context, "admin_service", "create", Some(":"));
              match result {
                  Ok(_) => println!("Access granted via SBA."),
-                 Err(e) => println!("Access denied via SBA: {}", e),
+                 Err(e) => println!("Access denied via SBA: {}", e.to_string()),
              }
          },
          Err(e) => {
-             println!("Error initializing Authorization: {}", e);
+             println!("Error initializing Authorization: {}", e.to_string());
          }
      }
      Ok(())

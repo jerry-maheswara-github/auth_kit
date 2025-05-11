@@ -28,7 +28,7 @@ impl Authorization {
     /// ```code
     /// let auth = Authorization::new("RBAC")?;
     /// ```
-    pub fn new(strategy: &str) -> Result<Self, &'static str> {
+    pub fn new(strategy: &str) -> Result<Self, AuthError> {
         let strategy = AuthStrategy::from_str(strategy)?;
         Ok(Self { strategy })
     }
@@ -80,8 +80,8 @@ impl Authorization {
                 });
                 let delim = delimiter.unwrap_or(".");
                 let candidates = vec![
-                    format!("{}{}{}{}{}", service, delim, resource.department, delim, permission), 
-                    format!("{}{}{}", service, delim, permission),  
+                    format!("{}{}{}{}{}", service, delim, resource.department, delim, permission),
+                    format!("{}{}{}", service, delim, permission),
                     format!("{}", permission),
                 ];
                 let scopes = claims.scopes.join(" ");

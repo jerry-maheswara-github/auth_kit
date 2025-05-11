@@ -1,7 +1,8 @@
 use auth_kit::auth::auth_z::Authorization;
+use auth_kit::error::AuthError;
 use auth_kit::model::{AuthContext, Claims, Resource};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), AuthError> {
     let claims = Claims {
         email: "jwt@example.com".to_string(),
         service: "admin_service".to_string(),
@@ -25,11 +26,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let result = auth.authorize(&context, "admin_service", "read", None);
             match result {
                 Ok(_) => println!("Access granted via SBA."),
-                Err(e) => println!("Access denied via SBA: {}", e),
+                Err(e) => println!("Access denied via SBA: {}", e.to_string()),
             }
         },
         Err(e) => {
-            println!("Error initializing Authorization: {}", e);
+            println!("Error initializing Authorization: {}", e.to_string());
         }
     }
 

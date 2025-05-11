@@ -1,5 +1,6 @@
 use std::fmt;
 use serde::Deserialize;
+use crate::error::AuthError;
 
 /// Defines supported authorization strategies.
 #[derive(Debug)]
@@ -22,12 +23,12 @@ impl AuthStrategy {
     /// # Returns
     ///
     /// A `Result` containing the matching `AuthStrategy` or an error string if invalid.
-    pub fn from_str(strategy: &str) -> Result<Self, &'static str> {
+    pub fn from_str(strategy: &str) -> Result<Self, AuthError> {
         match strategy.to_uppercase().as_str() {
             "ABAC" => Ok(AuthStrategy::ABAC),
             "RBAC" => Ok(AuthStrategy::RBAC),
             "SBA" => Ok(AuthStrategy::SBA),
-            _ => Err("Invalid strategy"),
+            _ => Err(AuthError::InvalidStrategy(strategy.to_string())),
         }
     }
 }
